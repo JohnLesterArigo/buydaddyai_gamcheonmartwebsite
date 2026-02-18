@@ -30,7 +30,12 @@ function ShopContent() {
   const categories = ['All', 'Ramen', 'Snacks', 'Drinks', 'Meals'];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 mt-16">
+    <div 
+      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat relative px-4 py-12"
+      style={{ 
+        backgroundImage: `url('/mart-background.jpg')`, // Put your image in the public folder
+      }}
+    >
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl md:text-6xl font-black text-center mb-12 bg-gradient-to-r from-[#8A38F5] to-[#D91A9C] bg-clip-text text-transparent">
           Our Products

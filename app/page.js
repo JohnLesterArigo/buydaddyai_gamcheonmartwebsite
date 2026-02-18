@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWeixin } from '@fortawesome/free-brands-svg-icons';
 import { faTruckFast } from '@fortawesome/free-solid-svg-icons';
+import Chatbot from './components/chatbot';
 
 export default function HomePage() {
 
@@ -136,6 +137,7 @@ export default function HomePage() {
         </div>
       </section>
       <Footer />
+      <Chatbot />
     </div>
     
   );
