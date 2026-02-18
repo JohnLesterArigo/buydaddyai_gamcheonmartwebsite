@@ -14,12 +14,12 @@ export default function HomePage() {
 
   const bestSellers = mockProducts.filter((p) => p.isBestSeller);
 
-  const categories = [
-    { name: 'Ramen', icon: Flame, color: '#FF9500' },
-    { name: 'Snacks', icon: Sparkles, color: '#FF00E1' },
-    { name: 'Drinks', icon: Wine, color: '#8A38F5' },
-    { name: 'Meals', icon: Package, color: '#FF9500' },
-  ];
+ const categories = [
+  { name: 'Ramen', icon: 'ramen.png', color: '#FF9500' },
+  { name: 'Snacks', icon: 'snacks.png', color: '#FF00E1' },
+  { name: 'Drinks', icon: '/drinks.png', color: '#8A38F5' },
+  { name: 'Meals', icon: '/meal.png', color: '#FF9500' },
+];
 
   return (
     <div className="min-h-screen">
@@ -49,35 +49,39 @@ export default function HomePage() {
       </section>
 
       {}
-      <section className="py-16 px-4 bg-gray-50 dark:bg-zinc-900">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            Shop by Category
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categories.map((category) => {
-              const Icon = category.icon;
-              return (
-                <Link
-                  key={category.name}
-                  href={`/shop?category=${category.name}`}
-                  className="bg-white dark:bg-zinc-800 rounded-lg p-6 text-center hover:shadow-lg transition-shadow border border-transparent hover:border-border"
-                >
-                  <div
-                    className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: category.color + '20' }}
-                  >
-                    <Icon className="w-8 h-8" style={{ color: category.color }} />
-                  </div>
-                  <h3 className="text-xl font-semibold" style={{ color: category.color }}>
-                    {category.name}
-                  </h3>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+     <section className="py-16 px-4 bg-gray-50 dark:bg-zinc-900">
+  <div className="max-w-7xl mx-auto">
+    <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+      Shop by Category
+    </h2>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {categories.map((category) => {
+        return (
+          <Link
+            key={category.name}
+            href={`/shop?category=${category.name}`}
+            className="bg-white dark:bg-zinc-800 rounded-lg p-6 text-center hover:shadow-lg transition-shadow border border-transparent hover:border-border group"
+          >
+            <div
+              className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110"
+              style={{ backgroundColor: category.color + '20' }}
+            >
+              {/* Change this part */}
+              <img 
+                src={category.icon} 
+                alt={category.name} 
+                className="w-10 h-10 object-contain" 
+              />
+            </div>
+            <h3 className="text-xl font-semibold" style={{ color: category.color }}>
+              {category.name}
+            </h3>
+          </Link>
+        );
+      })}
+    </div>
+  </div>
+</section>
 
       {}
       <section className="py-16 px-4">
