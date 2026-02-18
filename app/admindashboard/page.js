@@ -78,7 +78,7 @@ export default function AdminDashboard() {
     setQna(prev => prev.filter((_, i) => i !== idx));
   }
 
-  // ---------------- IMPORT FUNCTIONS ----------------
+  
   function importMenu() {
     try {
       const parsed = JSON.parse(menuImportText);
