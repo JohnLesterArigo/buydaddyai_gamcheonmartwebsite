@@ -16,7 +16,7 @@ export default function LoginPage() {
     if (email === 'admin@gmail.com' && password === 'admin123') {
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userRole', 'admin');
-      router.push('/admin'); 
+      router.push('/admindashboard'); 
     } 
     else if (email === 'user@gmail.com' && password === 'user123') {
       localStorage.setItem('isLoggedIn', 'true');
