@@ -1,21 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, LogOut } from 'lucide-react'; // Added LogOut icon
+import { ShoppingBag, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
   const router = useRouter();
 
   const handleLogout = () => {
-    // 1. Clear the login data
+   
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userRole');
     
-    // 2. Send the user back to the login screen
+    
     router.push('/login');
     
-    // 3. Force a slight refresh to ensure the Layout logic triggers
+    
     window.location.reload();
   };
 
@@ -38,7 +38,6 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-8">
             <Link href="/" className="text-[#8A38F5] font-semibold hover:opacity-80 transition-opacity">
               Home
@@ -50,7 +49,6 @@ export default function Navbar() {
               Contact
             </a>
 
-            {/* Logout Button */}
             <button 
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 rounded-full border border-red-100 text-red-500 hover:bg-red-50 transition-colors font-medium text-sm"

@@ -14,7 +14,7 @@ export default function Chatbot({ menu = [], qna = [] }) {
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   useEffect(scrollToBottom, [messages])
 
-  // Send message to API
+//mag sensd message sa api
   async function sendMessage() {
     if (!input) return
     const userMessage = { role: 'user', content: input }
@@ -61,13 +61,13 @@ ${qna.map(q => `Q: ${q.question} A: ${q.answer}`).join('\n')}
     <div className="fixed bottom-6 right-6 flex flex-col items-end z-[9999]">
       {isOpen && (
         <div className="mb-4 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
-          {/* HEADER */}
+        
           <div className="p-4 bg-gradient-to-r from-[#8A38F5] to-[#D91A9C] text-white flex justify-between items-center">
             <span className="font-bold">Gamcheon AI Support</span>
             <button onClick={() => setIsOpen(false)}><X size={20} /></button>
           </div>
 
-          {/* MESSAGES */}
+      
           <div className="flex-1 h-80 p-4 bg-gray-50 overflow-y-auto text-sm space-y-2">
             {messages.map((msg, i) => (
               <div key={i} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
@@ -82,7 +82,6 @@ ${qna.map(q => `Q: ${q.question} A: ${q.answer}`).join('\n')}
             <div ref={messagesEndRef}></div>
           </div>
 
-          {/* INPUT */}
           <div className="p-4 bg-white border-t border-gray-100 flex gap-2">
             <input
               type="text"
@@ -99,7 +98,6 @@ ${qna.map(q => `Q: ${q.question} A: ${q.answer}`).join('\n')}
         </div>
       )}
 
-      {/* TOGGLE BUTTON */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-16 h-16 bg-gradient-to-r from-[#8A38F5] to-[#D91A9C] rounded-full shadow-lg flex items-center justify-center text-white"

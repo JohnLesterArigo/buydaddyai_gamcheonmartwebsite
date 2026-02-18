@@ -31,7 +31,7 @@ export default function RootLayout({ children }) {
       router.push('/');
     }
 
-    // Give the router a moment to process before hiding the loading screen
+    
     const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
   }, [pathname, router]);

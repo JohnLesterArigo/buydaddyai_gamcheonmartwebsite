@@ -14,7 +14,7 @@ export function FeatureCard({ emoji, title, desc, color }) {
   );
 }
 
-// 2. The ProductCard component
+
 export function ProductCard({ product }) {
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 shadow-sm border border-border hover:shadow-md transition-shadow">
@@ -28,7 +28,7 @@ export function ProductCard({ product }) {
       <h3 className="font-bold text-lg">{product.name}</h3>
       <p className="text-sm text-muted-foreground mb-3">{product.category}</p>
       
-      {/* Updated price color to match your Figma purple (#8A38F5) */}
+      
       <p className="text-xl font-bold" style={{ color: '#8A38F5' }}>
         ${product.price.toFixed(2)}
       </p>

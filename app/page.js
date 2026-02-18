@@ -66,7 +66,7 @@ export default function HomePage() {
               className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110"
               style={{ backgroundColor: category.color + '20' }}
             >
-              {/* Change this part */}
+             
               <img 
                 src={category.icon} 
                 alt={category.name} 

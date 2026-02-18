@@ -32,17 +32,20 @@ export default function LoginPage() {
     <div 
       className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat relative px-4 py-12"
       style={{ 
-        backgroundImage: `url('/crops.jpg')`, // Added url() and forward slash
+        backgroundImage: `url('/crops.jpg')`, 
       }}
     >
 
-      {/* 2. The Login Card: Keeps your content centered and readable */}
+     ]
       <div className="relative max-w-md w-full space-y-8 bg-white/95 p-10 rounded-3xl shadow-2xl border border-white/20">
-        
-        {/* Logo & Header */}
+      
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-[#8A38F5]/10 rounded-2xl flex items-center justify-center mb-4">
-            <FontAwesomeIcon icon={faStore} className="text-3xl text-[#8A38F5]" />
+            <img 
+      src="/ramen.png" 
+      alt="Gamcheon Mart Logo" 
+      className="h-full w-full object-contain p-2" 
+    />
           </div>
           <h2 className="text-3xl font-black bg-gradient-to-r from-[#8A38F5] to-[#D91A9C] bg-clip-text text-transparent">
             Welcome Back

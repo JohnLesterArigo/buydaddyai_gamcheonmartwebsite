@@ -1,11 +1,11 @@
-// app/api/chat/route.js
+
 import { NextResponse } from 'next/server'
 
 export async function POST(req) {
   try {
     const { model, messages } = await req.json()
 
-    // Send request to Cloudflare LLaMA 3 instruct
+    // mag Send request to Cloudflare LLaMA 3 instruct
     const res = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/9f8a7826dc3f3275fb7a47f91ce02072/ai/run/${model}`,
       {
@@ -21,7 +21,7 @@ export async function POST(req) {
     const data = await res.json()
     console.log('Cloudflare AI raw response:', JSON.stringify(data, null, 2))
 
-    // The AI answer usually exists here
+    // The AI answer usually exists here hihi
     const aiText = data?.result?.response?.trim()
 
     if (!aiText) {
