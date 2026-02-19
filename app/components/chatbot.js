@@ -14,7 +14,7 @@ export default function Chatbot({ menu = [], qna = [] }) {
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   useEffect(scrollToBottom, [messages])
 
-//mag sensd message sa api
+  // Send message to API
   async function sendMessage() {
     if (!input) return
     const userMessage = { role: 'user', content: input }
@@ -29,9 +29,9 @@ Answer naturally using the menu and Q&A provided.
 Include availability numbers.
 Never say "I don't know"; give the best answer possible.
 Menu:
-${menu.map(i => `${i.name}: ₱${i.price}, ${i.description}, ${i.available} available`).join('\n')}
+${menu.map(i => ${i.name}: ₱${i.price}, ${i.description}, ${i.available} available).join('\n')}
 Q&A:
-${qna.map(q => `Q: ${q.question} A: ${q.answer}`).join('\n')}
+${qna.map(q => Q: ${q.question} A: ${q.answer}).join('\n')}
 `
 
       const res = await fetch('/api/chat', {
@@ -60,15 +60,15 @@ ${qna.map(q => `Q: ${q.question} A: ${q.answer}`).join('\n')}
   return (
     <div className="fixed bottom-6 right-6 flex flex-col items-end z-[9999]">
       {isOpen && (
-        <div className="mb-4 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
-        
+        <div className="mb-4 w-80 md:w-96 max-h-[70vh] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+          {/* HEADER */}
           <div className="p-4 bg-gradient-to-r from-[#8A38F5] to-[#D91A9C] text-white flex justify-between items-center">
             <span className="font-bold">Gamcheon AI Support</span>
             <button onClick={() => setIsOpen(false)}><X size={20} /></button>
           </div>
 
-      
-          <div className="flex-1 h-80 p-4 bg-gray-50 overflow-y-auto text-sm space-y-2">
+          {/* MESSAGES */}
+          <div className="chat-scroll flex-1 h-80 p-4 bg-gray-50 overflow-y-scroll text-sm space-y-2">
             {messages.map((msg, i) => (
               <div key={i} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
                 <div className={`inline-block px-3 py-2 rounded-xl max-w-[80%] ${
@@ -82,6 +82,7 @@ ${qna.map(q => `Q: ${q.question} A: ${q.answer}`).join('\n')}
             <div ref={messagesEndRef}></div>
           </div>
 
+          {/* INPUT */}
           <div className="p-4 bg-white border-t border-gray-100 flex gap-2">
             <input
               type="text"
@@ -98,12 +99,21 @@ ${qna.map(q => `Q: ${q.question} A: ${q.answer}`).join('\n')}
         </div>
       )}
 
+      {/* TOGGLE BUTTON */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-16 h-16 bg-gradient-to-r from-[#8A38F5] to-[#D91A9C] rounded-full shadow-lg flex items-center justify-center text-white"
       >
         {isOpen ? <X size={32} /> : <MessageCircle size={32} />}
       </button>
+
+      <style jsx global>{`
+        .chat-scroll { scrollbar-width: thin; scrollbar-color: #c7c7c7 transparent; scrollbar-gutter: stable both-edges; }
+        .chat-scroll::-webkit-scrollbar { width: 10px; }
+        .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 999px; }
+        .chat-scroll::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
+      `}</style>
     </div>
   )
 }
