@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Chatbot from '../components/chatbot';
+import NavbarforAdmin from '../components/NavbarforAdmin';
 
-export default function AdminDashboard() {
-  // --- States for Products ---
+export default function admindashboard() {
+  const router = useRouter();
+  
+  // --- States ---
   const [menu, setMenu] = useState([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -13,145 +17,206 @@ export default function AdminDashboard() {
   const [stock, setStock] = useState('');       
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isBestSeller, setIsBestSeller] = useState(false);
-  const fileInputRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  // --- Filter State ---
   const [activeFilter, setActiveFilter] = useState('All');
-
-  // --- States for Q&A ---
   const [qna, setQna] = useState([]);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [orders, setOrders] = useState([]);
+  const [editingStockId, setEditingStockId] = useState(null);
+ const [newStockValue, setNewStockValue] = useState('');
+  
+  const fileInputRef = useRef(null);
 
-  // Initial Data Fetch
-  useEffect(() => {
-    fetchProducts();
-    const savedQna = JSON.parse(localStorage.getItem('qna') || '[]');
-    setQna(savedQna);
-  }, []);
-
-  const fetchProducts = () => {
-    fetch('/api/products')
-      .then(res => res.json())
-      .then(data => setMenu(data));
-  };
-
-  // --- Logic for Best Sellers ---
-  const bestSellersList = menu.filter(item => item.is_best_seller);
-
-  async function toggleBestSeller(id, currentStatus) {
-    const response = await fetch(`/api/products/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ is_best_seller: !currentStatus }),
+ const deleteOrder = async (orderId) => {
+  if (!confirm("Are you sure?")) return;
+  
+  try {
+    const res = await fetch(`/api/orders/${orderId}`, {
+      method: 'DELETE',
     });
-    if (response.ok) {
-      fetchProducts();
+
+    if (res.ok) {
+      // ✅ Only remove from UI if the database confirmed deletion
+      setOrders((prevOrders) => prevOrders.filter(order => order.id !== orderId));
+      alert("Order permanently deleted from database!");
+    } else {
+      // ❌ If this alert pops up, your API route in Step 1 is broken
+      alert("Server Error: The database did not delete the order.");
     }
+  } catch (err) {
+    console.error("Network Error:", err);
   }
+};
 
-  // --- Filter Logic ---
-  const filteredMenu = activeFilter === 'All' 
-    ? menu 
-    : menu.filter(item => item.category === activeFilter);
+const handleRestock = async (productId) => {
+  try {
+    const response = await fetch(`/api/products/${productId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stock_quantity: Number(newStockValue) }),
+    });
 
-  // --- Image Handling ---
+    // ✅ Fix: Only parse JSON if there is content in the response
+    let result = {};
+    const text = await response.text(); 
+    if (text) {
+      result = JSON.parse(text);
+    }
+
+    if (response.ok) {
+      fetchProducts(); 
+      setEditingStockId(null);
+      setNewStockValue('');
+      alert("Stock updated successfully!");
+    } else {
+      alert("Failed: " + (result.error || "Server error occurred"));
+    }
+  } catch (error) {
+    console.error("Restock failed:", error);
+    alert("Check your internet or server terminal.");
+  }
+};
+  // --- Handlers ---
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setPreviewUrl(URL.createObjectURL(file));
-    }
+    if (file) setPreviewUrl(URL.createObjectURL(file));
   };
 
-  // --- CRUD Operations ---
-  async function handleDelete(id) {
-    if (!confirm("Are you sure you want to delete this product?")) return;
-    const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+  const fetchProducts = useCallback(() => {
+    fetch('/api/products').then(res => res.json()).then(data => setMenu(data));
+  }, []);
+
+  const fetchQna = useCallback(() => {
+    fetch('/api/train').then(res => res.json()).then(data => setQna(data));
+  }, []);
+const fetchOrders = useCallback(async () => {
+  // Use 'no-store' to tell the browser: "Do not use a saved copy of this list"
+  const res = await fetch('/api/orders', { 
+    cache: 'no-store',
+    headers: { 'Pragma': 'no-cache' } 
+  }); 
+  if (res.ok) {
+    const data = await res.json();
+    setOrders(Array.isArray(data) ? data : []);
+  }
+}, []);
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    const res = await fetch(`/api/orders/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (res.ok) fetchOrders();
+    else alert("404: Ensure app/api/orders/[id]/route.js exists!");
+  };
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    if (role !== 'admin') router.push('/shop');
+    else { fetchProducts(); fetchQna(); fetchOrders(); }
+  }, [router, fetchProducts, fetchQna, fetchOrders]);
+
+  async function toggleBestSeller(id, currentStatus) {
+  try {
+    const response = await fetch(`/api/products/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' }, // 🛡️ Added header
+      body: JSON.stringify({ is_best_seller: !currentStatus }),
+    });
+
     if (response.ok) {
-      fetchProducts();
+      fetchProducts(); // Refresh UI
+    } else {
+      const errorData = await response.json();
+      console.error("Toggle failed:", errorData.error);
+    }
+  } catch (err) {
+    console.error("Network Error:", err);
+  }
+}
+
+  async function handleDelete(id) {
+    if (!confirm("Are you sure?")) return;
+    const response = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    if (response.ok) fetchProducts();
+  }
+
+  async function handleProductSave(e) {
+    e.preventDefault();
+    setIsSaving(true);
+    const file = fileInputRef.current?.files[0];
+    let finalImageUrl = '/placeholder.jpg';
+
+    try {
+      if (file) {
+        const response = await fetch(`/api/upload?filename=${file.name}`, {
+          method: 'POST',
+          body: file,
+        });
+        if (response.ok) {
+          const newBlob = await response.json();
+          finalImageUrl = newBlob.url;
+        }
+      }
+
+      const stockToSave = category === 'Meals' ? -1 : (parseInt(stock) || 0);
+
+      const dbResponse = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name, price: parseFloat(price), description, 
+          image_url: finalImageUrl, category, 
+          stock_quantity: stockToSave, is_best_seller: isBestSeller 
+        }),
+      });
+
+      if (dbResponse.ok) {
+        fetchProducts();
+        setName(''); setPrice(''); setDescription(''); setCategory(''); setStock(''); 
+        setPreviewUrl(null); setIsBestSeller(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    } catch (error) { console.error("Save failed:", error); }
+    finally { setIsSaving(false); }
+  }
+
+  async function handleQnaSave(e) {
+    e.preventDefault();
+    if (!question || !answer) return;
+    const response = await fetch('/api/train', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, answer }),
+    });
+    if (response.ok) {
+      fetchQna();
+      setQuestion(''); setAnswer('');
     }
   }
 
   
-async function handleProductSave(e) {
-  e.preventDefault();
-  setIsSaving(true); // 1. Start the loading screen
 
-  const file = fileInputRef.current?.files[0];
-  let finalImageUrl = '/placeholder.jpg';
+const safeMenu = Array.isArray(menu) ? menu : [];
 
-  try {
-    if (file) {
-      const response = await fetch(`/api/upload?filename=${file.name}`, {
-        method: 'POST',
-        body: file,
-      });
+const filteredMenu = activeFilter === 'All' 
+  ? safeMenu 
+  : safeMenu.filter(item => item.category === activeFilter);
 
-      if (response.ok) {
-        const newBlob = await response.json();
-        finalImageUrl = newBlob.url;
-      }
-    }
-
-    const dbResponse = await fetch('/api/products', {
-      method: 'POST',
-      body: JSON.stringify({ 
-        name, 
-        price, 
-        description, 
-        image_url: finalImageUrl,
-        category,
-        stock_quantity: parseInt(stock) || 0,
-        is_best_seller: isBestSeller 
-      }),
-    });
-
-    if (dbResponse.ok) {
-      fetchProducts();
-      // Reset Form
-      setName(''); setPrice(''); setDescription(''); setCategory(''); setStock(''); 
-      setPreviewUrl(null); setIsBestSeller(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  } catch (error) {
-    console.error("Save failed:", error);
-  } finally {
-    setIsSaving(false); // 2. Stop the loading screen automatically
-  }
-}
-
-  // --- AI Knowledge Logic ---
-  function handleQnaSave(e) {
-    e.preventDefault();
-    if (!question || !answer) return;
-    const updatedQna = [...qna, { question, answer }];
-    setQna(updatedQna);
-    localStorage.setItem('qna', JSON.stringify(updatedQna));
-    setQuestion(''); setAnswer('');
-  }
-
-  function deleteQna(idx) {
-    const updated = qna.filter((_, i) => i !== idx);
-    setQna(updated);
-    localStorage.setItem('qna', JSON.stringify(updated));
-  }
+const bestSellersList = safeMenu.filter(item => item.is_best_seller);
 
   return (
     <main className="min-h-screen bg-[#8A38F5] p-6 font-sans text-gray-800">
       {/* TOP NAVIGATION BAR */}
-      <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-2xl shadow-lg">
-        <h1 className="text-2xl font-bold text-[#8A38F5]">Gamcheon Mart Admin</h1>
-        <div className="flex gap-4">
-           <a href="/" className="bg-gray-100 px-4 py-2 rounded-xl font-bold hover:bg-gray-200 text-sm">Home</a>
-           <a href="/shop" className="bg-[#8A38F5] text-white px-4 py-2 rounded-xl font-bold hover:bg-[#742ed4] text-sm">View Shop</a>
-        </div>
-      </div>
+    <NavbarforAdmin />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* PANEL 1: PRODUCT EDITOR */}
         <section className="bg-[#FFD18B] p-8 rounded-[40px] shadow-2xl flex flex-col gap-6">
-          <h2 className="text-xl font-black text-gray-800 uppercase tracking-tight italic">🛒 Add New Product</h2>
+          <h2 className="text-xl font-black text-gray-800 uppercase tracking-tight italic">Add New Product</h2>
           <form onSubmit={handleProductSave} className="space-y-4">
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Item Name" className="w-full p-4 rounded-2xl border-none shadow-inner text-sm" required />
             
@@ -180,7 +245,12 @@ async function handleProductSave(e) {
 
         {/* PANEL 2: ACTIVE BEST SELLERS */}
         <section className="bg-white p-8 rounded-[40px] shadow-2xl border-4 border-[#FFD18B]">
-          <h2 className="text-xl font-black text-[#8A38F5] mb-6 uppercase italic flex items-center gap-2">⭐ Active Best Sellers</h2>
+         <h2 className="text-xl font-black text-[#8A38F5] mb-6 uppercase italic flex items-center gap-2">
+         <img 
+               src="/bestsellingicon.png" 
+               alt="Best Seller" 
+               className="w-8 h-8 object-contain" 
+          /> Active Best Sellers </h2>
           <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
             {bestSellersList.map(item => (
               <div key={item.id} className="flex items-center justify-between bg-gray-50 p-4 rounded-2xl border border-gray-100 group">
@@ -210,14 +280,14 @@ async function handleProductSave(e) {
 
         {/* PANEL 3: AI KNOWLEDGE */}
         <section className="bg-[#5D1DB4] p-8 rounded-[40px] shadow-2xl text-white">
-          <h2 className="text-xl font-black mb-6 text-purple-200 uppercase tracking-tight italic">🤖 AI Knowledge</h2>
+          <h2 className="text-xl font-black mb-6 text-purple-200 uppercase tracking-tight italic">Frequently Ask Questions</h2>
           <form onSubmit={handleQnaSave} className="space-y-4 mb-6">
             <input value={question} onChange={e => setQuestion(e.target.value)} placeholder="User Question?" className="w-full p-4 rounded-2xl border-none text-gray-800 shadow-inner text-sm" required />
             <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder="AI Answer..." className="w-full p-4 rounded-2xl h-24 border-none text-gray-800 shadow-inner text-sm" required />
             <button type="submit" className="w-full bg-purple-400 text-white font-black py-4 rounded-2xl shadow-lg hover:bg-purple-300 transition-all uppercase text-sm">Train AI</button>
           </form>
           <div className="bg-purple-900/40 p-6 rounded-3xl overflow-y-auto max-h-40 space-y-3">
-            {qna.map((item, i) => (
+            {Array.isArray(qna) && qna.map((item, i) => (
               <div key={i} className="text-[10px] border-b border-purple-700 pb-3 flex justify-between items-start">
                 <div className="pr-2"><p className="font-bold text-purple-200">Q: {item.question}</p></div>
                 <button onClick={() => deleteQna(i)} className="text-red-400 font-bold uppercase hover:text-red-300">Delete</button>
@@ -226,6 +296,76 @@ async function handleProductSave(e) {
           </div>
         </section>
       </div>
+
+      <section className="bg-white p-8 rounded-[40px] shadow-2xl mt-8 border-4 border-[#8A38F5]">
+  <h2 className="text-2xl font-black text-[#8A38F5] mb-6 uppercase italic tracking-tighter">📦 Incoming Customer Orders</h2>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {orders.map(order => (
+      <div key={order.id} className="bg-gray-50 p-6 rounded-[32px] border-2 border-gray-100 flex flex-col gap-4">
+        <div className="flex justify-between items-start">
+          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+            order.status === 'Pending' ? 'bg-orange-100 text-orange-600' : 
+            order.status === 'Processing' ? 'bg-blue-100 text-blue-600' : 
+            'bg-green-100 text-green-600'
+          }`}>
+            {order.status}
+          </span>
+          <span className="text-[10px] text-gray-400 font-bold">{new Date(order.created_at).toLocaleDateString()}</span>
+        </div>
+
+        <div>
+  <h3 className="font-black text-gray-800 uppercase">{order.customer_name}</h3>
+  {/* ✅ FIX: Match the column name from your SQL table */}
+  <p className="text-[10px] text-[#8A38F5] font-black uppercase">
+    {order.user_phone || order.phone_number || 'Guest / No Number'}
+  </p>
+  <p className="text-[10px] text-gray-500 italic">{order.address}</p>
+</div>
+
+       <div className="bg-white p-3 rounded-2xl">
+{(() => {
+    try {
+      const itemsList = Array.isArray(order.items) 
+        ? order.items 
+        : JSON.parse(order.items || "[]");
+        
+      return itemsList.map((item, idx) => (
+        <p key={idx} className="text-[10px] font-bold text-gray-600">
+          • {item.name} (x{item.quantity})
+        </p>
+      ));
+    } catch (e) {
+      console.error("Parse error for order:", order.id, e);
+      return <p className="text-[10px] text-red-500 italic">Error loading items</p>;
+    }
+  })()}
+  <p className="mt-2 text-sm font-black text-[#8A38F5]">Total: ₱{order.total_price}</p>
+</div>
+
+        <div className="flex gap-2 mt-auto">
+          {order.status === 'Pending' && (
+            <button onClick={() => updateOrderStatus(order.id, 'Processing')} className="flex-1 bg-blue-500 text-white py-3 rounded-xl text-[10px] font-black uppercase">Process</button>
+          )}
+          {order.status === 'Processing' && (
+            <button onClick={() => updateOrderStatus(order.id, 'Delivering')} className="flex-1 bg-purple-500 text-white py-3 rounded-xl text-[10px] font-black uppercase">Deliver</button>
+          )}
+          {order.status === 'Delivering' && (
+            <button onClick={() => updateOrderStatus(order.id, 'Completed')} className="flex-1 bg-green-500 text-white py-3 rounded-xl text-[10px] font-black uppercase">Finish</button>
+          )}
+
+          {order.status === 'Completed' && (
+    <button 
+      onClick={() => deleteOrder(order.id)} 
+      className="flex-1 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white py-3 rounded-xl text-[10px] font-black uppercase transition-colors"
+    >
+      Clear Order
+    </button>
+  )}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
 
       {/* MASTER INVENTORY SECTION */}
       <div className="mt-8 bg-white p-8 rounded-[40px] shadow-2xl">
@@ -277,6 +417,43 @@ async function handleProductSave(e) {
                     {item.category === 'Meals' ? 'Freshly Prepared' : `Stock: ${item.stock_quantity ?? 0}`} 
                   </span>
                 </div>
+                {item.category !== 'Meals' && (
+    <div className="flex gap-1">
+      {editingStockId === item.id ? (
+        <>
+          <input 
+            type="number" 
+            value={newStockValue} 
+            onChange={(e) => setNewStockValue(e.target.value)}
+            className="w-16 p-1 text-[10px] border rounded-lg outline-none focus:ring-1 focus:ring-[#8A38F5]"
+            placeholder="Qty"
+          />
+          <button 
+            onClick={() => handleRestock(item.id)}
+            className="bg-green-500 text-white px-2 py-1 rounded-lg text-[8px] font-bold uppercase"
+          >
+            Confirm
+          </button>
+          <button 
+            onClick={() => setEditingStockId(null)}
+            className="bg-gray-200 text-gray-600 px-2 py-1 rounded-lg text-[8px] font-bold uppercase"
+          >
+            X
+          </button>
+        </>
+      ) : (
+        <button 
+          onClick={() => {
+            setEditingStockId(item.id);
+            setNewStockValue(item.stock_quantity);
+          }}
+          className="text-[9px] text-[#8A38F5] font-black uppercase hover:underline"
+        >
+          + Restock Item
+        </button>
+      )}
+    </div>
+  )}
               </div>
 
               <button onClick={() => handleDelete(item.id)} className="w-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white py-4 rounded-2xl text-[10px] font-black transition-all uppercase">Delete</button>

@@ -1,157 +1,126 @@
-'use client'; 
+'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ProductCard, FeatureCard } from './components/ProductCard';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faWeixin } from '@fortawesome/free-brands-svg-icons';
-import { faTruckFast } from '@fortawesome/free-solid-svg-icons';
-import Chatbot from './components/chatbot';
+import { loginAction } from './actions/auth';
 
-export default function HomePage() {
-  const [bestSellers, setBestSellers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // --- FETCH LIVE DATA FROM DATABASE ---
+  // ✅ EFFECT: Load saved email on page mount
   useEffect(() => {
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((data) => {
-        // Only show products where is_best_seller is TRUE in the database
-        const filtered = data.filter((p) => p.is_best_seller === true);
-        setBestSellers(filtered);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to load best sellers:", err);
-        setIsLoading(false);
-      });
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
   }, []);
 
-  const categories = [
-    { name: 'Ramen', icon: 'ramen.png', color: '#FF9500' },
-    { name: 'Snacks', icon: 'snacks.png', color: '#FF00E1' },
-    { name: 'Drinks', icon: '/drinks.png', color: '#8A38F5' },
-    { name: 'Meals', icon: '/meal.png', color: '#FF9500' },
-  ];
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // ✅ FIX: Create the object to send to loginAction
+      const loginData = { email, password };
+      const result = await loginAction(loginData);
+      
+      if (result.success) {
+  // ✅ Save identity and status
+  localStorage.setItem('userEmail', email); 
+  localStorage.setItem('isLoggedIn', 'true');
+  localStorage.setItem('userRole', result.role); 
+
+ 
+  if (result.role === 'admin') {
+    router.push('/admindashboard');
+  } else {
+    router.push('/home');
+  }
+      } else {
+        alert(result.error || "Invalid credentials");
+      }
+    } catch (err) {
+      alert("Login Error: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen">
-      {/* HERO SECTION */}
-      <section
-        className="relative py-20 px-4 text-center"
-        style={{
-          background: 'linear-gradient(135deg, #8A38F5 0%, #FF00E1 100%)',
-        }}
-      >
-        <div className="relative h-[30vh] flex flex-col items-center justify-center ">
-          <div className="mb-4">
-            <img 
-              src="/gamcheon_logo trans.png" 
-              alt="Gamcheon Mart Logo" 
-              className="h-24 md:h-40 lg:h-48 w-auto object-contain"
+    <div 
+      className="min-h-screen w-full flex items-center justify-center bg-cover bg-center bg-no-repeat relative px-4 py-12"
+      style={{ backgroundImage: "url('/crops.jpg')", backgroundColor: '#8A38F5' }}
+    >
+      <div className="absolute inset-0 bg-black/40 z-0"></div>
+
+      <div className="relative z-10 max-w-md w-full space-y-8 bg-white p-10 rounded-3xl shadow-2xl">
+        <div className="text-center">
+          <div>
+            <img src="/gamcheon_logo trans.png"/>
+          </div>
+          <h2 className="text-3xl font-black text-[#8A38F5]">Welcome</h2>
+        </div>
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <input
+              type="email"
+              required
+              value={email}
+              className="block w-full px-4 py-3 border border-gray-200 rounded-xl text-black outline-none focus:ring-2 focus:ring-[#8A38F5]"
+              placeholder="Email"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+              type="password"
+              required
+              value={password}
+              className="block w-full px-4 py-3 border border-gray-200 rounded-xl text-black outline-none focus:ring-2 focus:ring-[#8A38F5]"
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Link
-            href="/shop"
-            className="inline-block px-8 py-4 bg-white rounded-lg text-xl font-medium transition-transform hover:scale-105"
-            style={{ color: '#8A38F5' }}
-          >
-            Shop Now
-          </Link>
-        </div>
-      </section>
 
-      {/* CATEGORIES SECTION */}
-      <section className="py-16 px-4 bg-gray-50 dark:bg-zinc-900">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Shop by Category</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categories.map((category) => (
-              <Link
-                key={category.name}
-                href={`/shop?category=${category.name}`}
-                className="bg-white dark:bg-zinc-800 rounded-lg p-6 text-center hover:shadow-lg transition-shadow border border-transparent hover:border-border group"
-              >
-                <div
-                  className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110"
-                  style={{ backgroundColor: category.color + '20' }}
-                >
-                  <img src={category.icon} alt={category.name} className="w-10 h-10 object-contain" />
-                </div>
-                <h3 className="text-xl font-semibold" style={{ color: category.color }}>{category.name}</h3>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* BEST SELLERS SECTION (NOW DYNAMIC) */}
-      <section className="py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Best Sellers</h2>
-          
-          {isLoading ? (
-            <div className="text-center text-gray-400 font-bold uppercase animate-pulse">Loading Featured Items...</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {bestSellers.map((product) => (
-                // Note: We use product.image_url (DB column name) instead of product.image (mock name)
-                <ProductCard 
-                  key={product.id} 
-                  product={{
-                    ...product,
-                    image: product.image_url // Mapping DB name to what ProductCard expects
-                  }} 
-                />
-              ))}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 text-[#8A38F5] focus:ring-[#8A38F5] border-gray-300 rounded cursor-pointer"
+              />
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer">
+                Remember me
+              </label>
             </div>
-          )}
-
-          {bestSellers.length === 0 && !isLoading && (
-            <p className="text-center text-gray-400 italic">No best sellers featured right now.</p>
-          )}
-
-          <div className="text-center mt-10">
-            <Link
-              href="/shop"
-              className="inline-block px-6 py-3 rounded-lg text-white font-medium transition-opacity hover:opacity-90"
-              style={{ backgroundColor: '#8A38F5' }}
-            >
-              View All Products
-            </Link>
           </div>
-        </div>
-      </section>
 
-      {/* FEATURES SECTION */}
-      <section className="py-16 px-4 bg-gray-50 dark:bg-zinc-900">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Why Choose Gamcheon Mart?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <FeatureCard 
-              emoji={<img src="/flag.png" alt="Authentic Korea" className="w-10 h-10 object-contain" />} 
-              title="100% Authentic" 
-              desc="All products imported directly from Korea" 
-              color="#8A38F5" 
-            />
-            <FeatureCard 
-              emoji={<FontAwesomeIcon icon={faTruckFast} />}
-              title="Fast Shipping" 
-              desc="Free shipping on orders over $50" 
-              color="#FF9500" 
-            />
-            <FeatureCard 
-              emoji={<FontAwesomeIcon icon={faWeixin} />}
-              title="24/7 Support" 
-              desc="AI chatbot ready to help anytime" 
-              color="#FF00E1" 
-            />
-          </div>
-        </div>
-      </section>
-      <Chatbot />
+          <button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full py-4 font-bold rounded-xl text-white bg-[#8A38F5] hover:opacity-90 transition-opacity disabled:bg-gray-400"
+          >
+            {isLoading ? 'Authenticating...' : 'Sign In'}
+          </button>
+        </form>
+        
+        <p className="text-center mt-6 text-sm text-gray-600">
+           Don't have an account?{' '}
+           <Link 
+             href="/signup" 
+             className="text-[#8A38F5] font-bold hover:text-blue-800 hover:underline transition-colors"
+           >
+             Create one here
+           </Link>
+        </p>
+      </div>
     </div>
   );
 }

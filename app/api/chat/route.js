@@ -1,6 +1,28 @@
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
+  const sql = neon(process.env.POSTGRES_URL);
+
+  const currentOrders = await sql`
+  SELECT customer_name, status 
+  FROM orders 
+  WHERE status != 'Completed'
+`;
+
+const orderStatusContext = currentOrders.map(o => 
+  `${o.customer_name}'s order is currently ${o.status}`
+).join(". ");
+
+// 3. Add this to your System Prompt
+const systemPrompt = `
+  You are the Gamcheon Mart Assistant. 
+  CURRENT KITCHEN STATUS: ${orderStatusContext}.
+  
+  If a user asks about their order status (e.g., "Where is my order?" or "Is my food ready?"),
+  check the status above. For example:
+  - If status is 'Processing', tell them "It's currently in the kitchen being prepared!"
+  - If status is 'Delivering', tell them "It's on the way to you now!"
+`;
   try {
     const { messages } = await req.json();
 

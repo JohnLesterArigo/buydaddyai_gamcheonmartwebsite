@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ShoppingBag, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export default function Navbar() {
+export default function NavbarforAdmin() {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -41,25 +41,13 @@ export default function Navbar() {
                   className="h-15 w-auto object-contain transition-transform group-hover:scale-105" 
                 />              
             </div>
-              <span className="text-2xl font-bold flex gap-2 Poetsen One"> 
+             <span className="text-2xl font-bold flex gap-2 Poetsen One"> 
               <span className="text-[#800080]">Gamcheon</span>
               <span className="text-[#FF4500]">Mart</span>
              </span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            {/* Updated Links to match your new folder structure */}
-            <Link href="/home" className="text-[#8A38F5] font-semibold hover:opacity-80 transition-opacity">
-              Home
-            </Link>
-            {/* If your products are still inside the /shop folder, keep this. 
-                If you moved them to /home, change this to #products */}
-            <Link href="/shop" className="text-gray-600 hover:text-[#8A38F5] transition-colors">
-              Products
-            </Link>
-            <a href="/contact" className="text-gray-600 hover:text-[#8A38F5] transition-colors cursor-pointer">
-              Contact
-            </a>
 
             <button 
               onClick={handleLogout}
